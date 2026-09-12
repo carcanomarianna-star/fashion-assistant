@@ -3,7 +3,7 @@
 import React from 'react';
 import { WardrobeItem } from '@/lib/types';
 import { COLOR_CONFIG, EVERYDAY_COLOR_CHEAT_SHEET } from '@/lib/style-formula-rules';
-import { X, Heart, Trash2, PlusCircle, CheckCircle2, Sparkles, Shirt } from 'lucide-react';
+import { X, Heart, Trash2, PlusCircle, CheckCircle2, Sparkles, Shirt, Edit3 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface ItemDetailModalProps {
@@ -13,6 +13,7 @@ interface ItemDetailModalProps {
   onLogWear: (id: string) => void;
   onDelete: (id: string) => void;
   onBuildOutfitAround: (item: WardrobeItem) => void;
+  onEditItem?: (item: WardrobeItem) => void;
 }
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
@@ -22,6 +23,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   onLogWear,
   onDelete,
   onBuildOutfitAround,
+  onEditItem,
 }) => {
   if (!item) return null;
 
@@ -52,6 +54,19 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+
+          {onEditItem && (
+            <button
+              onClick={() => {
+                onClose();
+                onEditItem(item);
+              }}
+              className="absolute top-4 right-14 p-2 rounded-full bg-white/80 backdrop-blur-md text-editorial-700 hover:text-editorial-900 transition shadow-sm"
+              title="Edit Garment Details & Photo"
+            >
+              <Edit3 className="w-5 h-5 text-editorial-800" />
+            </button>
+          )}
 
           <button
             onClick={() => onToggleFavorite(item.id)}

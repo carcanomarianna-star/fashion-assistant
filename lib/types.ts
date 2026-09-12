@@ -14,7 +14,7 @@ export type MainCategory =
 
 export type SubCategory =
   // Tops
-  | 'T-Shirt' | 'Blouse' | 'Knit / Sweater' | 'Button-Down Shirt' | 'Tank / Camisole' | 'Crop Top'
+  | 'T-Shirt' | 'Blouse' | 'Knit / Sweater' | 'Button-Down Shirt' | 'Tank / Camisole' | 'Crop Top' | 'Blazer'
   // Bottoms
   | 'Tailored Trousers' | 'Jeans' | 'Wide-Leg Pants' | 'Midi / Maxi Skirt' | 'Mini Skirt' | 'Shorts'
   // One-Piece
@@ -51,7 +51,11 @@ export type FormulaColor =
   | 'Gray'
   | 'Black'
   | 'White'
-  | 'Burgundy';
+  | 'Burgundy'
+  // Additional Tones & Patterns
+  | 'Charcoal Gray'
+  | 'Cerulean'
+  | 'Pattern';
 
 export type ShapeSilhouette =
   | 'Fitted'
@@ -95,6 +99,7 @@ export interface WardrobeItem {
   subcategory: SubCategory;
   primaryColor: FormulaColor;
   secondaryColor?: FormulaColor;
+  patternColors?: FormulaColor[];
   shape: ShapeSilhouette;
   finishTexture: FinishTexture;
   occasions: Occasion[];

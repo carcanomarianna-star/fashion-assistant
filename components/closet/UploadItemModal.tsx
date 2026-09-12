@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   WardrobeItem, 
   MainCategory, 
@@ -12,18 +12,20 @@ import {
   Season 
 } from '@/lib/types';
 import { COLOR_CONFIG } from '@/lib/style-formula-rules';
-import { X, Camera, Upload, Check, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { X, Camera, Upload, Check, Sparkles, Image as ImageIcon, Edit3 } from 'lucide-react';
 
 interface UploadItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (item: Omit<WardrobeItem, 'id' | 'createdAt' | 'timesWorn'>) => void;
+  initialItem?: WardrobeItem | null;
+  onUpdate?: (item: WardrobeItem) => void;
 }
 
 const CATEGORIES: { label: MainCategory; subcategories: SubCategory[] }[] = [
   {
     label: 'Tops',
-    subcategories: ['T-Shirt', 'Blouse', 'Knit / Sweater', 'Button-Down Shirt', 'Tank / Camisole', 'Crop Top'],
+    subcategories: ['T-Shirt', 'Blouse', 'Knit / Sweater', 'Button-Down Shirt', 'Tank / Camisole', 'Crop Top', 'Blazer'],
   },
   {
     label: 'Bottoms',
@@ -81,6 +83,8 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialItem,
+  onUpdate,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -90,11 +94,42 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
   const [category, setCategory] = useState<MainCategory>('Tops');
   const [subcategory, setSubcategory] = useState<SubCategory>('T-Shirt');
   const [primaryColor, setPrimaryColor] = useState<FormulaColor>('Red');
+  const [patternColors, setPatternColors] = useState<FormulaColor[]>([]);
   const [shape, setShape] = useState<ShapeSilhouette>('Fitted');
   const [finishTexture, setFinishTexture] = useState<FinishTexture>('Cotton');
   const [selectedOccasions, setSelectedOccasions] = useState<Occasion[]>(['Work', 'Weekends']);
   const [brand, setBrand] = useState('');
   const [notes, setNotes] = useState('');
+
+  const isEditing = !!initialItem;
+
+  useEffect(() => {
+    if (initialItem) {
+      setImagePreview(initialItem.imageUrl || '');
+      setName(initialItem.name || '');
+      setCategory(initialItem.category || 'Tops');
+      setSubcategory(initialItem.subcategory || 'T-Shirt');
+      setPrimaryColor(initialItem.primaryColor || 'Red');
+      setPatternColors(initialItem.patternColors || []);
+      setShape(initialItem.shape || 'Fitted');
+      setFinishTexture(initialItem.finishTexture || 'Cotton');
+      setSelectedOccasions(initialItem.occasions || ['Work', 'Weekends']);
+      setBrand(initialItem.brand || '');
+      setNotes(initialItem.notes || '');
+    } else {
+      setImagePreview('');
+      setName('');
+      setCategory('Tops');
+      setSubcategory('T-Shirt');
+      setPrimaryColor('Red');
+      setPatternColors([]);
+      setShape('Fitted');
+      setFinishTexture('Cotton');
+      setSelectedOccasions(['Work', 'Weekends']);
+      setBrand('');
+      setNotes('');
+    }
+  }, [initialItem, isOpen]);
 
   if (!isOpen) return null;
 
@@ -129,24 +164,50 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
     }
   };
 
+  const togglePatternColor = (col: FormulaColor) => {
+    if (patternColors.includes(col)) {
+      setPatternColors(patternColors.filter((c) => c !== col));
+    } else {
+      setPatternColors([...patternColors, col]);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    onSave({
-      name: name.trim(),
-      category,
-      subcategory,
-      primaryColor,
-      shape,
-      finishTexture,
-      occasions: selectedOccasions,
-      seasons: ['All Season'],
-      imageUrl: imagePreview || '',
-      brand: brand.trim() || undefined,
-      notes: notes.trim() || undefined,
-      favorite: false,
-    });
+    if (isEditing && initialItem && onUpdate) {
+      onUpdate({
+        ...initialItem,
+        name: name.trim(),
+        category,
+        subcategory,
+        primaryColor,
+        patternColors: primaryColor === 'Pattern' ? patternColors : undefined,
+        shape,
+        finishTexture,
+        occasions: selectedOccasions,
+        imageUrl: imagePreview || initialItem.imageUrl || '',
+        brand: brand.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+    } else {
+      onSave({
+        name: name.trim(),
+        category,
+        subcategory,
+        primaryColor,
+        patternColors: primaryColor === 'Pattern' ? patternColors : undefined,
+        shape,
+        finishTexture,
+        occasions: selectedOccasions,
+        seasons: ['All Season'],
+        imageUrl: imagePreview || '',
+        brand: brand.trim() || undefined,
+        notes: notes.trim() || undefined,
+        favorite: false,
+      });
+    }
 
     onClose();
   };
@@ -160,10 +221,10 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-editorial-200/80 bg-white/70">
           <div>
             <span className="text-[10px] font-bold tracking-widest uppercase text-editorial-500">
-              Add New Piece
+              {isEditing ? 'Modify Garment Details' : 'Add New Piece'}
             </span>
             <h2 className="text-lg font-serif font-bold text-editorial-900">
-              Tag by Color, Shape & Finish
+              {isEditing ? `Edit "${name || 'Item'}"` : 'Tag by Color, Shape & Finish'}
             </h2>
           </div>
           <button
@@ -178,7 +239,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
           {/* Image Upload / Capture Section */}
           <div>
             <label className="block text-xs font-bold text-editorial-700 uppercase tracking-wider mb-2">
-              Garment Photo
+              {isEditing ? 'Change Garment Photo' : 'Garment Photo'}
             </label>
             <div className="flex items-center gap-3">
               <div
@@ -234,7 +295,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
                   className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-editorial-300 text-editorial-800 text-xs font-semibold hover:bg-editorial-100 transition active:scale-95"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Upload from Gallery</span>
+                  <span>{isEditing ? 'Change Photo' : 'Upload from Gallery'}</span>
                 </button>
               </div>
             </div>
@@ -303,17 +364,17 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
             )}
           </div>
 
-          {/* Color Selector (From Cheat Sheet) */}
+          {/* Color Selector */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-editorial-700 uppercase tracking-wider">
-                Color (From Guide Palette)
+                Color Palette
               </label>
               <span className="text-xs font-semibold text-editorial-800">
                 Selected: <span className="underline">{primaryColor}</span>
               </span>
             </div>
-            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-36 overflow-y-auto p-1 bg-white rounded-2xl border border-editorial-200">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto p-1.5 bg-white rounded-2xl border border-editorial-200">
               {Object.keys(COLOR_CONFIG).map((colName) => {
                 const color = colName as FormulaColor;
                 const info = COLOR_CONFIG[color];
@@ -341,7 +402,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
                         />
                       )}
                     </span>
-                    <span className="text-[10px] font-medium text-editorial-800 mt-1 truncate max-w-full">
+                    <span className="text-[9px] font-medium text-editorial-800 mt-1 truncate max-w-full text-center">
                       {color}
                     </span>
                   </button>
@@ -349,6 +410,46 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
               })}
             </div>
           </div>
+
+          {/* Prompt Question for Pattern Colors */}
+          {primaryColor === 'Pattern' && (
+            <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 space-y-2 animate-fade-in">
+              <span className="text-xs font-bold text-purple-900 block">
+                🎨 Pattern Color Selection: What colors are in this pattern?
+              </span>
+              <p className="text-[11px] text-purple-700 leading-snug">
+                Select the key colors featured in the print/pattern so the Outfit Assistant can generate matching solid pairings:
+              </p>
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {Object.keys(COLOR_CONFIG)
+                  .filter((c) => c !== 'Pattern')
+                  .map((colName) => {
+                    const col = colName as FormulaColor;
+                    const info = COLOR_CONFIG[col];
+                    const isSelected = patternColors.includes(col);
+                    return (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => togglePatternColor(col)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                          isSelected
+                            ? 'bg-purple-900 text-white border-purple-900 shadow-xs'
+                            : 'bg-white text-purple-900 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-black/20"
+                          style={{ backgroundColor: info.hex }}
+                        />
+                        <span>{col}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
 
           {/* Guide Formula: Shape (S) & Finish (F) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -450,7 +551,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
               className="w-full py-3 rounded-2xl bg-editorial-900 text-editorial-50 text-sm font-bold shadow-md hover:bg-editorial-800 transition active:scale-98 flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4 text-yellow-300" />
-              <span>Add Piece to Wardrobe</span>
+              <span>{isEditing ? 'Save Changes' : 'Add Piece to Wardrobe'}</span>
             </button>
           </div>
         </form>

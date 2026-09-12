@@ -25,6 +25,9 @@ export const COLOR_CONFIG: Record<FormulaColor, { hex: string; textDark: boolean
   Black: { hex: '#1C1917', textDark: false, category: 'neutral' },
   White: { hex: '#FFFFFF', textDark: true, category: 'neutral' },
   Burgundy: { hex: '#722F37', textDark: false, category: 'accent' },
+  'Charcoal Gray': { hex: '#36454F', textDark: false, category: 'neutral' },
+  Cerulean: { hex: '#007BA7', textDark: false, category: 'accent' },
+  Pattern: { hex: '#8B5CF6', textDark: false, category: 'accent' },
 };
 
 /**
@@ -84,7 +87,7 @@ export const EVERYDAY_COLOR_CHEAT_SHEET: Record<string, ColorPairingRule> = {
 /**
  * Universal neutral tones that pair effortlessly across all wardrobes
  */
-export const UNIVERSAL_NEUTRALS: FormulaColor[] = ['White', 'Cream', 'Black', 'Gray', 'Denim', 'Tan', 'Camel', 'Navy'];
+export const UNIVERSAL_NEUTRALS: FormulaColor[] = ['White', 'Cream', 'Black', 'Gray', 'Charcoal Gray', 'Denim', 'Tan', 'Camel', 'Navy'];
 
 /**
  * Evaluate whether two colors form a valid Style Formula pairing
@@ -99,6 +102,15 @@ export function evaluateColorPairing(colorA: FormulaColor, colorB: FormulaColor)
       isMatch: true,
       score: 90,
       reason: 'Monochrome pairing: cohesive tonal elegance with continuous visual line.'
+    };
+  }
+
+  // Handle Pattern color pairings
+  if (colorA === 'Pattern' || colorB === 'Pattern') {
+    return {
+      isMatch: true,
+      score: 88,
+      reason: 'Pattern Accent: Anchored by solid tones present within or matching the print.'
     };
   }
 

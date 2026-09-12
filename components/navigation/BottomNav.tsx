@@ -26,7 +26,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-lg md:max-w-4xl mx-auto glass-nav border-t border-editorial-200/80 px-2 py-2 safe-area-pb">
+    <nav className="fixed bottom-3 left-0 right-0 z-[60] max-w-md md:max-w-4xl mx-auto glass-nav border border-editorial-200/90 rounded-3xl px-2 py-2 shadow-xl backdrop-blur-xl">
       <div className="flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;

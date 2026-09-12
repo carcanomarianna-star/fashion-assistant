@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { WardrobeItem, MainCategory, FormulaColor, ShapeSilhouette, Occasion } from '@/lib/types';
+import { WardrobeItem, MainCategory, SubCategory, FormulaColor, ShapeSilhouette, Occasion } from '@/lib/types';
 import { ItemCard } from './ItemCard';
 import { UploadItemModal } from './UploadItemModal';
 import { ItemDetailModal } from './ItemDetailModal';
-import { Plus, Search, Filter, SlidersHorizontal, Sparkles, Shirt, Database } from 'lucide-react';
+import { Plus, Search, Filter, SlidersHorizontal, Sparkles, Shirt, Database, X } from 'lucide-react';
 import { COLOR_CONFIG } from '@/lib/style-formula-rules';
 
 interface ClosetViewProps {
   items: WardrobeItem[];
   onAddItem: (item: Omit<WardrobeItem, 'id' | 'createdAt' | 'timesWorn'>) => void;
+  onUpdateItem: (item: WardrobeItem) => void;
   onDeleteItem: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onLogWear: (id: string) => void;
@@ -32,6 +33,7 @@ const CATEGORIES: ('All' | MainCategory)[] = [
 export const ClosetView: React.FC<ClosetViewProps> = ({
   items,
   onAddItem,
+  onUpdateItem,
   onDeleteItem,
   onToggleFavorite,
   onLogWear,
@@ -39,18 +41,33 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
   onOpenBackup,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'All' | MainCategory>('All');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<SubCategory | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedColor, setSelectedColor] = useState<FormulaColor | 'All'>('All');
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | 'All'>('All');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<WardrobeItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Available subcategories dynamically collected from catalog or category
+  const availableSubcategories = useMemo(() => {
+    let sourceItems = items;
+    if (selectedCategory !== 'All') {
+      sourceItems = items.filter((i) => i.category === selectedCategory);
+    }
+    const set = new Set<SubCategory>();
+    sourceItems.forEach((i) => set.add(i.subcategory));
+    return Array.from(set);
+  }, [items, selectedCategory]);
 
   // Filter items
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
+      if (selectedSubcategory !== 'All' && item.subcategory !== selectedSubcategory) return false;
       if (selectedColor !== 'All' && item.primaryColor !== selectedColor && item.secondaryColor !== selectedColor) return false;
       if (selectedOccasion !== 'All' && !item.occasions.includes(selectedOccasion)) return false;
       if (showOnlyFavorites && !item.favorite) return false;
@@ -64,10 +81,10 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
       }
       return true;
     });
-  }, [items, selectedCategory, selectedColor, selectedOccasion, showOnlyFavorites, searchQuery]);
+  }, [items, selectedCategory, selectedSubcategory, selectedColor, selectedOccasion, showOnlyFavorites, searchQuery]);
 
   return (
-    <div className="space-y-4 px-4 py-3 pb-20">
+    <div className="space-y-4 px-4 py-3 pb-28">
       {/* Top Search & Filter Bar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
@@ -84,11 +101,11 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`p-2.5 rounded-2xl border transition ${
-            showFilters || selectedColor !== 'All' || selectedOccasion !== 'All' || showOnlyFavorites
+            showFilters || selectedColor !== 'All' || selectedOccasion !== 'All' || selectedSubcategory !== 'All' || showOnlyFavorites
               ? 'bg-editorial-900 text-editorial-50 border-editorial-900 shadow-xs'
               : 'bg-white/80 text-editorial-700 border-editorial-200 hover:bg-editorial-100'
           }`}
-          title="Filter by Color & Occasion"
+          title="Filter by Color, Subtype & Occasion"
         >
           <SlidersHorizontal className="w-4 h-4" />
         </button>
@@ -104,7 +121,10 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
         )}
 
         <button
-          onClick={() => setIsUploadOpen(true)}
+          onClick={() => {
+            setEditingItem(null);
+            setIsUploadOpen(true);
+          }}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-editorial-900 text-editorial-50 text-xs font-bold hover:bg-editorial-800 transition active:scale-95 shadow-sm"
         >
           <Plus className="w-4 h-4" />
@@ -115,8 +135,55 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
       {/* Expandable Advanced Filters */}
       {showFilters && (
         <div className="p-3.5 rounded-2xl bg-white border border-editorial-200 shadow-sm space-y-3 animate-fade-in">
+          {/* Subtype Filter */}
+          {availableSubcategories.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold text-editorial-600 uppercase tracking-wider block">
+                  Filter by Garment Subtype:
+                </span>
+                {selectedSubcategory !== 'All' && (
+                  <button
+                    onClick={() => setSelectedSubcategory('All')}
+                    className="text-[10px] text-editorial-500 hover:underline flex items-center gap-0.5"
+                  >
+                    <X className="w-3 h-3" /> Clear Subtype
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  onClick={() => setSelectedSubcategory('All')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                    selectedSubcategory === 'All'
+                      ? 'bg-editorial-900 text-white'
+                      : 'bg-editorial-100 text-editorial-700 hover:bg-editorial-200'
+                  }`}
+                >
+                  All Subtypes
+                </button>
+                {availableSubcategories.map((sub) => {
+                  const isSelected = selectedSubcategory === sub;
+                  return (
+                    <button
+                      key={sub}
+                      onClick={() => setSelectedSubcategory(isSelected ? 'All' : sub)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap border transition ${
+                        isSelected
+                          ? 'border-editorial-900 bg-editorial-900 text-white font-semibold shadow-xs'
+                          : 'border-editorial-200 bg-editorial-50 text-editorial-800 hover:bg-editorial-100'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Color Filter */}
-          <div>
+          <div className="pt-2 border-t border-editorial-100">
             <span className="text-[10px] font-bold text-editorial-600 uppercase tracking-wider block mb-1.5">
               Filter by Guide Color:
             </span>
@@ -202,7 +269,10 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
           return (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => {
+                setSelectedCategory(cat);
+                setSelectedSubcategory('All');
+              }}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 isSelected
                   ? 'bg-editorial-900 text-editorial-50 shadow-sm'
@@ -249,6 +319,7 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
           <button
             onClick={() => {
               setSelectedCategory('All');
+              setSelectedSubcategory('All');
               setSelectedColor('All');
               setSelectedOccasion('All');
               setSearchQuery('');
@@ -261,11 +332,16 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
         </div>
       )}
 
-      {/* Upload Item Modal */}
+      {/* Upload & Edit Item Modal */}
       <UploadItemModal
         isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
+        onClose={() => {
+          setIsUploadOpen(false);
+          setEditingItem(null);
+        }}
         onSave={onAddItem}
+        initialItem={editingItem}
+        onUpdate={onUpdateItem}
       />
 
       {/* Item Detail Modal */}
@@ -276,6 +352,10 @@ export const ClosetView: React.FC<ClosetViewProps> = ({
         onLogWear={onLogWear}
         onDelete={onDeleteItem}
         onBuildOutfitAround={onBuildOutfitAround}
+        onEditItem={(itemToEdit) => {
+          setEditingItem(itemToEdit);
+          setIsUploadOpen(true);
+        }}
       />
     </div>
   );

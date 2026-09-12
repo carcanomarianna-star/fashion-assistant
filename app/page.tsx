@@ -18,7 +18,7 @@ import { SEED_WARDROBE_ITEMS } from '@/lib/seed-data';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('closet');
-  const [items, setItems] = useState<WardrobeItem[]>(SEED_WARDROBE_ITEMS);
+  const [items, setItems] = useState<WardrobeItem[]>([]);
   const [savedOutfits, setSavedOutfits] = useState<OutfitFormula[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,14 +28,19 @@ export default function Home() {
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
 
-  // Load initial items from IndexedDB
+  // Load initial items from IndexedDB (filtering/deleting legacy built-in seed items)
   const refreshData = async () => {
     try {
       if (typeof window !== 'undefined') {
         const loadedItems = await ensureInitialWardrobe();
-        if (loadedItems && loadedItems.length > 0) {
-          setItems(loadedItems);
+        // Purge built-in seed items if present
+        const customItems = loadedItems.filter((i) => !i.id.startsWith('seed-'));
+        if (customItems.length !== loadedItems.length) {
+          const seedIds = loadedItems.filter((i) => i.id.startsWith('seed-')).map((i) => i.id);
+          await db.wardrobeItems.bulkDelete(seedIds);
         }
+        setItems(customItems);
+
         const loadedSaved = await db.savedOutfits.toArray();
         setSavedOutfits(loadedSaved);
       }
@@ -59,6 +64,12 @@ export default function Home() {
 
     await db.wardrobeItems.add(fullItem);
     setItems((prev) => [fullItem, ...prev]);
+  };
+
+  // Update Item Handler
+  const handleUpdateItem = async (updatedItem: WardrobeItem) => {
+    await db.wardrobeItems.put(updatedItem);
+    setItems((prev) => prev.map((i) => (i.id === updatedItem.id ? updatedItem : i)));
   };
 
   // Delete Item Handler
@@ -158,6 +169,7 @@ export default function Home() {
           <ClosetView
             items={items}
             onAddItem={handleAddItem}
+            onUpdateItem={handleUpdateItem}
             onDeleteItem={handleDeleteItem}
             onToggleFavorite={handleToggleFavorite}
             onLogWear={handleLogWear}

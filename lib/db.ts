@@ -18,27 +18,30 @@ export class FashionDatabase extends Dexie {
 export const db = new FashionDatabase();
 
 /**
- * Initialize database with seed items if completely empty
+ * Initialize database - returns current stored items in IndexedDB
  */
 export async function ensureInitialWardrobe(): Promise<WardrobeItem[]> {
   try {
-    const count = await db.wardrobeItems.count();
-    if (count === 0) {
-      await db.wardrobeItems.bulkAdd(SEED_WARDROBE_ITEMS);
-      return SEED_WARDROBE_ITEMS;
-    }
     return await db.wardrobeItems.toArray();
   } catch (error) {
-    console.error('Failed to initialize wardrobe DB:', error);
-    return SEED_WARDROBE_ITEMS;
+    console.error('Failed to access wardrobe DB:', error);
+    return [];
   }
 }
 
 /**
- * Reset database back to default seed wardrobe
+ * Load sample seed items into database
  */
 export async function resetToDemoWardrobe(): Promise<void> {
   await db.wardrobeItems.clear();
   await db.savedOutfits.clear();
   await db.wardrobeItems.bulkAdd(SEED_WARDROBE_ITEMS);
+}
+
+/**
+ * Completely clear wardrobe items from database
+ */
+export async function clearAllWardrobeItems(): Promise<void> {
+  await db.wardrobeItems.clear();
+  await db.savedOutfits.clear();
 }
