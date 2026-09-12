@@ -1,0 +1,16 @@
+{
+  "name": "Style Formula - Wardrobe & Outfit Assistant",
+  "short_name": "StyleFormula",
+  "description": "Your digital wardrobe database and Color + Shape + Finish outfit assistant.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F5",
+  "theme_color": "#FAF8F5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
