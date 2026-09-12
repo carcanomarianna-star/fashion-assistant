@@ -73,6 +73,7 @@ const FINISH_TEXTURES: FinishTexture[] = [
   'Wool',
   'Cotton',
   'Suede',
+  'Corduroy',
   'Metallic / Gold',
   'Metallic / Silver',
 ];

@@ -76,6 +76,7 @@ export type FinishTexture =
   | 'Wool'
   | 'Cotton'
   | 'Suede'
+  | 'Corduroy'
   | 'Metallic / Gold'
   | 'Metallic / Silver';
 
