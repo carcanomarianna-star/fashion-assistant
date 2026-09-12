@@ -90,14 +90,19 @@ export const EVERYDAY_COLOR_CHEAT_SHEET: Record<string, ColorPairingRule> = {
 export const UNIVERSAL_NEUTRALS: FormulaColor[] = ['White', 'Cream', 'Black', 'Gray', 'Charcoal Gray', 'Denim', 'Tan', 'Camel', 'Navy'];
 
 /**
- * Evaluate whether two colors form a valid Style Formula pairing
+ * Evaluate whether two colors form a valid Style Formula pairing, supporting dynamic pattern sub-color analysis
  */
-export function evaluateColorPairing(colorA: FormulaColor, colorB: FormulaColor): {
+export function evaluateColorPairing(
+  colorA: FormulaColor,
+  colorB: FormulaColor,
+  patternColorsA?: FormulaColor[],
+  patternColorsB?: FormulaColor[]
+): {
   isMatch: boolean;
   score: number;
   reason: string;
 } {
-  if (colorA === colorB) {
+  if (colorA === colorB && colorA !== 'Pattern') {
     return {
       isMatch: true,
       score: 90,
@@ -107,6 +112,49 @@ export function evaluateColorPairing(colorA: FormulaColor, colorB: FormulaColor)
 
   // Handle Pattern color pairings
   if (colorA === 'Pattern' || colorB === 'Pattern') {
+    const patternColors = colorA === 'Pattern' ? patternColorsA : patternColorsB;
+    const solidColor = colorA === 'Pattern' ? colorB : colorA;
+
+    if (patternColors && patternColors.length > 0) {
+      // 1. Direct Pattern Pick-Up Rule (Solid color matches a color inside the pattern print)
+      if (patternColors.includes(solidColor)) {
+        return {
+          isMatch: true,
+          score: 100,
+          reason: `Pattern Color Pick-Up: Solid ${solidColor} directly anchors and pulls out the ${solidColor} tones in the print.`
+        };
+      }
+
+      // 2. Pattern Color Harmony (Solid color forms an official cheat-sheet pairing with a pattern color)
+      for (const pColor of patternColors) {
+        const ruleP = EVERYDAY_COLOR_CHEAT_SHEET[pColor];
+        if (ruleP && ruleP.pairings.includes(solidColor)) {
+          return {
+            isMatch: true,
+            score: 95,
+            reason: `Pattern Harmony: Solid ${solidColor} forms an official pairing with ${pColor} contained within the print.`
+          };
+        }
+        const ruleSolid = EVERYDAY_COLOR_CHEAT_SHEET[solidColor];
+        if (ruleSolid && ruleSolid.pairings.includes(pColor)) {
+          return {
+            isMatch: true,
+            score: 95,
+            reason: `Pattern Harmony: Solid ${solidColor} complements ${pColor} contained within the print.`
+          };
+        }
+      }
+
+      // 3. Pattern Neutral Balance (Solid color is a universal neutral)
+      if (UNIVERSAL_NEUTRALS.includes(solidColor)) {
+        return {
+          isMatch: true,
+          score: 90,
+          reason: `Pattern Neutral Balance: Neutral ${solidColor} seamlessly grounds the vibrant multi-color print.`
+        };
+      }
+    }
+
     return {
       isMatch: true,
       score: 88,

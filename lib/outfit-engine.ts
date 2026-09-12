@@ -51,7 +51,12 @@ export function generateOutfitFormulas(
       if (focusColor && !hasFocus) continue;
 
       // Evaluate Color Pairing
-      const colorEval = evaluateColorPairing(top.primaryColor, bottom.primaryColor);
+      const colorEval = evaluateColorPairing(
+        top.primaryColor,
+        bottom.primaryColor,
+        top.patternColors,
+        bottom.patternColors
+      );
 
       // Evaluate Shape Harmony
       const shapeEval = evaluateShapeHarmony(top.shape, bottom.shape);
@@ -59,18 +64,18 @@ export function generateOutfitFormulas(
       // Pick matching outerwear (optional)
       const matchingOuter = outerwears.find(o => 
         fitsOccasion(o) && 
-        (anchorItem?.id === o.id || evaluateColorPairing(o.primaryColor, top.primaryColor).isMatch)
+        (anchorItem?.id === o.id || evaluateColorPairing(o.primaryColor, top.primaryColor, o.patternColors, top.patternColors).isMatch)
       );
 
       // Pick matching shoes & bags
       const matchingShoes = shoes.find(s => 
         fitsOccasion(s) && 
-        (anchorItem?.id === s.id || evaluateColorPairing(s.primaryColor, bottom.primaryColor).score >= 70)
+        (anchorItem?.id === s.id || evaluateColorPairing(s.primaryColor, bottom.primaryColor, s.patternColors, bottom.patternColors).score >= 70)
       );
 
       const matchingBag = bags.find(b => 
         fitsOccasion(b) && 
-        (anchorItem?.id === b.id || evaluateColorPairing(b.primaryColor, top.primaryColor).score >= 70)
+        (anchorItem?.id === b.id || evaluateColorPairing(b.primaryColor, top.primaryColor, b.patternColors, top.patternColors).score >= 70)
       );
 
       const matchingAccessory = accessories.find(a => fitsOccasion(a));
@@ -128,7 +133,7 @@ export function generateOutfitFormulas(
     if (focusColor && !matchesFocus(dress)) continue;
 
     const matchingOuter = outerwears.find(o => 
-      fitsOccasion(o) && evaluateColorPairing(o.primaryColor, dress.primaryColor).isMatch
+      fitsOccasion(o) && evaluateColorPairing(o.primaryColor, dress.primaryColor, o.patternColors, dress.patternColors).isMatch
     );
 
     const matchingShoes = shoes.find(s => fitsOccasion(s));
@@ -136,7 +141,7 @@ export function generateOutfitFormulas(
     const matchingAccessory = accessories.find(a => fitsOccasion(a));
 
     const colorEval = matchingOuter 
-      ? evaluateColorPairing(dress.primaryColor, matchingOuter.primaryColor)
+      ? evaluateColorPairing(dress.primaryColor, matchingOuter.primaryColor, dress.patternColors, matchingOuter.patternColors)
       : { isMatch: true, score: 90, reason: `Statement ${dress.primaryColor} base grounded with monochrome or neutral finishing pieces.` };
 
     const shapeEval = evaluateShapeHarmony(dress.shape, undefined, matchingOuter?.shape);
@@ -199,10 +204,18 @@ export function evaluateManualOutfit(items: {
 }): OutfitFormula {
   const { top, bottom, onePiece, outerwear, shoes, bag, accessory } = items;
 
-  const primaryColor = (top?.primaryColor || onePiece?.primaryColor || outerwear?.primaryColor || 'Camel') as FormulaColor;
-  const pairingColor = (bottom?.primaryColor || outerwear?.primaryColor || shoes?.primaryColor || 'Navy') as FormulaColor;
+  const primaryItem = top || onePiece || outerwear;
+  const secondaryItem = bottom || outerwear || shoes;
 
-  const colorEval = evaluateColorPairing(primaryColor, pairingColor);
+  const primaryColor = (primaryItem?.primaryColor || 'Camel') as FormulaColor;
+  const pairingColor = (secondaryItem?.primaryColor || 'Navy') as FormulaColor;
+
+  const colorEval = evaluateColorPairing(
+    primaryColor,
+    pairingColor,
+    primaryItem?.patternColors,
+    secondaryItem?.patternColors
+  );
   const shapeEval = evaluateShapeHarmony(
     top?.shape || onePiece?.shape,
     bottom?.shape,

@@ -5,11 +5,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  allowedDevOrigins: [
-    "localhost:3000",
-    "127.0.0.1:3000",
-    "*.trycloudflare.com",
-  ],
+  experimental: {
+    allowedDevOrigins: [
+      "localhost:3000",
+      "127.0.0.1:3000",
+      "*.trycloudflare.com",
+    ],
+  },
 };
 
 export default nextConfig;
