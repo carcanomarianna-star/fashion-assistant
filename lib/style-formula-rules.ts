@@ -316,7 +316,9 @@ export function evaluateShapeHarmony(
  */
 export const HEAVY_TACTILE_TEXTURES: FinishTexture[] = [
   'Knit',
+  'Ribbed',
   'Corduroy',
+  'Fleece',
   'Suede',
   'Linen',
   'Metallic / Gold',

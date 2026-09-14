@@ -66,6 +66,7 @@ const SHAPES: ShapeSilhouette[] = [
 
 const FINISH_TEXTURES: FinishTexture[] = [
   'Knit',
+  'Ribbed',
   'Leather',
   'Denim',
   'Silk / Satin',
@@ -74,6 +75,7 @@ const FINISH_TEXTURES: FinishTexture[] = [
   'Cotton',
   'Suede',
   'Corduroy',
+  'Fleece',
   'Metallic / Gold',
   'Metallic / Silver',
 ];

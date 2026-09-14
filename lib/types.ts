@@ -70,6 +70,7 @@ export type ShapeSilhouette =
 
 export type FinishTexture =
   | 'Knit'
+  | 'Ribbed'
   | 'Leather'
   | 'Denim'
   | 'Silk / Satin'
@@ -78,6 +79,7 @@ export type FinishTexture =
   | 'Cotton'
   | 'Suede'
   | 'Corduroy'
+  | 'Fleece'
   | 'Metallic / Gold'
   | 'Metallic / Silver';
 
