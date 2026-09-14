@@ -1,4 +1,4 @@
-import { FormulaColor, ColorPairingRule, ShapeSilhouette, MainCategory } from './types';
+import { FormulaColor, ColorPairingRule, ShapeSilhouette, MainCategory, FinishTexture } from './types';
 
 /**
  * Color metadata including hex representation for UI swatches and UI rendering
@@ -308,5 +308,69 @@ export function evaluateShapeHarmony(
     isBalanced: true,
     score: 80,
     description: 'Clean balanced silhouette with cohesive proportions.'
+  };
+}
+
+/**
+ * Heavy, high-tactile surface textures that compete visually if layered together
+ */
+export const HEAVY_TACTILE_TEXTURES: FinishTexture[] = [
+  'Knit',
+  'Corduroy',
+  'Suede',
+  'Linen',
+  'Metallic / Gold',
+  'Metallic / Silver'
+];
+
+/**
+ * Texture & Finish Harmony Rules (The 'F' in CSF)
+ * Rule: Heavy tactile textures (e.g., Knit/Ribbed, Corduroy, Suede) should NOT be paired together.
+ * They require smooth foundation textures (Cotton, Wool, Silk/Satin, Denim, Leather) to balance visual weight.
+ */
+export function evaluateTextureHarmony(
+  textureA?: FinishTexture,
+  textureB?: FinishTexture,
+  textureC?: FinishTexture
+): { isBalanced: boolean; score: number; description: string } {
+  const textures = [textureA, textureB, textureC].filter((t): t is FinishTexture => !!t);
+
+  if (textures.length <= 1) {
+    return {
+      isBalanced: true,
+      score: 90,
+      description: 'Clean single texture foundation.'
+    };
+  }
+
+  // Identify heavy tactile textures present in the combination
+  const heavyTextures = textures.filter((t) => HEAVY_TACTILE_TEXTURES.includes(t));
+
+  // If 2 or more heavy tactile textures are paired together (e.g., Knit top + Corduroy bottom)
+  if (heavyTextures.length >= 2) {
+    const uniqueHeavy = Array.from(new Set(heavyTextures));
+    return {
+      isBalanced: false,
+      score: 30,
+      description: `Texture Clash: Combining competing heavy textures (${uniqueHeavy.join(' + ')}) causes visual weight overlap. Pair heavy textures with smooth fabrics (Cotton, Silk, Wool, or Denim).`
+    };
+  }
+
+  // Heavy tactile texture paired with smooth texture (Optimal Contrast!)
+  if (heavyTextures.length === 1) {
+    const heavy = heavyTextures[0];
+    const smooth = textures.find((t) => !HEAVY_TACTILE_TEXTURES.includes(t));
+    return {
+      isBalanced: true,
+      score: 100,
+      description: `Tactile Contrast: ${heavy} texture is effortlessly anchored by smooth ${smooth || 'foundation'} fabric.`
+    };
+  }
+
+  // Smooth + Smooth texture foundation
+  return {
+    isBalanced: true,
+    score: 85,
+    description: 'Clean texture harmony with smooth fabric foundation.'
   };
 }

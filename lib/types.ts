@@ -144,6 +144,7 @@ export interface OutfitFormula {
     hasShoes: boolean;
     hasBag: boolean;
     hasFinishingDetails: boolean;
+    textureDescription?: string;
     score: number; // 0 - 100
   };
   overallScore: number; // 0 - 100

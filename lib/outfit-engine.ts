@@ -1,5 +1,5 @@
 import { WardrobeItem, OutfitFormula, Occasion, FormulaColor } from './types';
-import { evaluateColorPairing, evaluateShapeHarmony, COLOR_CONFIG } from './style-formula-rules';
+import { evaluateColorPairing, evaluateShapeHarmony, evaluateTextureHarmony, COLOR_CONFIG } from './style-formula-rules';
 
 /**
  * Helper to ensure an outfit contains at most 1 pattern item, UNLESS all pattern items share the exact same pattern colorway (matching printed co-ord set).
@@ -108,11 +108,19 @@ export function generateOutfitFormulas(
         continue;
       }
 
-      // Calculate Finish Completeness Score (The 'F' in CSF)
-      let finishScore = 50;
-      if (matchingShoes) finishScore += 25;
-      if (matchingBag) finishScore += 15;
-      if (matchingAccessory || matchingOuter) finishScore += 10;
+      // Evaluate Texture Harmony (The 'F' in CSF: Reject competing heavy textures like Knit top + Corduroy bottom)
+      const textureEval = evaluateTextureHarmony(top.finishTexture, bottom.finishTexture, matchingOuter?.finishTexture);
+      if (!textureEval.isBalanced) {
+        continue;
+      }
+
+      // Calculate Finish Completeness & Texture Score (The 'F' in CSF)
+      let completenessScore = 40;
+      if (matchingShoes) completenessScore += 30;
+      if (matchingBag) completenessScore += 15;
+      if (matchingAccessory || matchingOuter) completenessScore += 15;
+
+      const finishScore = Math.round(completenessScore * 0.5 + textureEval.score * 0.5);
 
       // Overall formula score (Weighted: Color 40%, Shape 35%, Finish 25%)
       const overallScore = Math.round(
@@ -146,6 +154,7 @@ export function generateOutfitFormulas(
             hasShoes: !!matchingShoes,
             hasBag: !!matchingBag,
             hasFinishingDetails: !!(matchingAccessory || matchingOuter),
+            textureDescription: textureEval.description,
             score: finishScore,
           },
           overallScore,
@@ -172,16 +181,23 @@ export function generateOutfitFormulas(
       continue;
     }
 
+    const textureEval = evaluateTextureHarmony(dress.finishTexture, matchingOuter?.finishTexture);
+    if (!textureEval.isBalanced) {
+      continue;
+    }
+
     const colorEval = matchingOuter 
       ? evaluateColorPairing(dress.primaryColor, matchingOuter.primaryColor, dress.patternColors, matchingOuter.patternColors)
       : { isMatch: true, score: 90, reason: `Statement ${dress.primaryColor} base grounded with monochrome or neutral finishing pieces.` };
 
     const shapeEval = evaluateShapeHarmony(dress.shape, undefined, matchingOuter?.shape);
 
-    let finishScore = 55;
-    if (matchingShoes) finishScore += 25;
-    if (matchingBag) finishScore += 10;
-    if (matchingAccessory || matchingOuter) finishScore += 10;
+    let completenessScore = 45;
+    if (matchingShoes) completenessScore += 25;
+    if (matchingBag) completenessScore += 15;
+    if (matchingAccessory || matchingOuter) completenessScore += 15;
+
+    const finishScore = Math.round(completenessScore * 0.5 + textureEval.score * 0.5);
 
     const overallScore = Math.round(
       colorEval.score * 0.4 + shapeEval.score * 0.35 + finishScore * 0.25
@@ -212,6 +228,7 @@ export function generateOutfitFormulas(
         hasShoes: !!matchingShoes,
         hasBag: !!matchingBag,
         hasFinishingDetails: !!(matchingAccessory || matchingOuter),
+        textureDescription: textureEval.description,
         score: finishScore,
       },
       overallScore,
@@ -257,16 +274,26 @@ export function evaluateManualOutfit(items: {
       reason: 'Pattern Clash: Outfits cannot mix multiple patterned pieces unless they feature the exact same pattern colorway.'
     };
   }
+
   const shapeEval = evaluateShapeHarmony(
     top?.shape || onePiece?.shape,
     bottom?.shape,
     outerwear?.shape
   );
 
-  let finishScore = 40;
-  if (shoes) finishScore += 30;
-  if (bag) finishScore += 15;
-  if (accessory || outerwear) finishScore += 15;
+  // Evaluate Texture Harmony across top/onePiece, bottom, outerwear
+  const textureEval = evaluateTextureHarmony(
+    top?.finishTexture || onePiece?.finishTexture,
+    bottom?.finishTexture,
+    outerwear?.finishTexture
+  );
+
+  let completenessScore = 40;
+  if (shoes) completenessScore += 30;
+  if (bag) completenessScore += 15;
+  if (accessory || outerwear) completenessScore += 15;
+
+  const finishScore = Math.round(completenessScore * 0.5 + textureEval.score * 0.5);
 
   const overallScore = Math.round(
     colorEval.score * 0.4 + shapeEval.score * 0.35 + finishScore * 0.25
@@ -303,6 +330,7 @@ export function evaluateManualOutfit(items: {
       hasShoes: !!shoes,
       hasBag: !!bag,
       hasFinishingDetails: !!(accessory || outerwear),
+      textureDescription: textureEval.description,
       score: finishScore,
     },
     overallScore,
