@@ -27,6 +27,7 @@ export const COLOR_CONFIG: Record<FormulaColor, { hex: string; textDark: boolean
   Burgundy: { hex: '#722F37', textDark: false, category: 'accent' },
   'Charcoal Gray': { hex: '#36454F', textDark: false, category: 'neutral' },
   Cerulean: { hex: '#007BA7', textDark: false, category: 'accent' },
+  Mustard: { hex: '#D4AF37', textDark: false, category: 'accent' },
   Pattern: { hex: '#8B5CF6', textDark: false, category: 'accent' },
 };
 
@@ -82,6 +83,12 @@ export const EVERYDAY_COLOR_CHEAT_SHEET: Record<string, ColorPairingRule> = {
     description: 'Quiet luxury foundation. Cream creates high-end latte tones; Light Pink or Sky Blue adds gentle contrast.',
     mood: 'Effortless & Luxe'
   },
+  Mustard: {
+    mainColor: 'Mustard',
+    pairings: ['Navy', 'Cream', 'Denim', 'Charcoal Gray', 'Burgundy', 'Black', 'Olive'],
+    description: 'Rich golden warmth. Navy and Denim ground its brightness; Cream and Charcoal create high-contrast sophistication.',
+    mood: 'Warm & Artisanal'
+  },
 };
 
 /**
@@ -110,7 +117,31 @@ export function evaluateColorPairing(
     };
   }
 
-  // Handle Pattern color pairings
+  // Handle Dual Pattern Pieces (Pattern + Pattern)
+  if (colorA === 'Pattern' && colorB === 'Pattern') {
+    const arePatternsIdentical =
+      patternColorsA &&
+      patternColorsB &&
+      patternColorsA.length > 0 &&
+      patternColorsA.length === patternColorsB.length &&
+      patternColorsA.every((c) => patternColorsB.includes(c));
+
+    if (arePatternsIdentical) {
+      return {
+        isMatch: true,
+        score: 95,
+        reason: 'Matching Co-Ord Set: Identical pattern colorway creates a unified, intentional printed ensemble.'
+      };
+    }
+
+    return {
+      isMatch: false,
+      score: 0,
+      reason: 'Pattern Clash: Outfits cannot mix multiple patterned pieces unless they feature the exact same pattern colorway.'
+    };
+  }
+
+  // Handle Single Pattern + Solid Color Pairing
   if (colorA === 'Pattern' || colorB === 'Pattern') {
     const patternColors = colorA === 'Pattern' ? patternColorsA : patternColorsB;
     const solidColor = colorA === 'Pattern' ? colorB : colorA;

@@ -55,6 +55,7 @@ export type FormulaColor =
   // Additional Tones & Patterns
   | 'Charcoal Gray'
   | 'Cerulean'
+  | 'Mustard'
   | 'Pattern';
 
 export type ShapeSilhouette =

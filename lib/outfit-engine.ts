@@ -2,6 +2,26 @@ import { WardrobeItem, OutfitFormula, Occasion, FormulaColor } from './types';
 import { evaluateColorPairing, evaluateShapeHarmony, COLOR_CONFIG } from './style-formula-rules';
 
 /**
+ * Helper to ensure an outfit contains at most 1 pattern item, UNLESS all pattern items share the exact same pattern colorway (matching printed co-ord set).
+ */
+export function hasValidPatternCombination(items: (WardrobeItem | undefined)[]): boolean {
+  const patternItems = items.filter((i): i is WardrobeItem => i?.primaryColor === 'Pattern');
+  if (patternItems.length <= 1) return true;
+
+  // More than 1 pattern item: check if ALL pattern items have identical patternColors
+  const firstColors = patternItems[0].patternColors || [];
+  if (firstColors.length === 0) return false;
+
+  return patternItems.every((item) => {
+    const itemColors = item.patternColors || [];
+    return (
+      itemColors.length === firstColors.length &&
+      itemColors.every((c) => firstColors.includes(c))
+    );
+  });
+}
+
+/**
  * Generates recommendations and evaluates outfits based on Color + Shape + Finish (CSF)
  */
 export function generateOutfitFormulas(
@@ -58,6 +78,9 @@ export function generateOutfitFormulas(
         bottom.patternColors
       );
 
+      // Skip if pairwise color evaluation fails or clashes
+      if (!colorEval.isMatch || colorEval.score < 60) continue;
+
       // Evaluate Shape Harmony
       const shapeEval = evaluateShapeHarmony(top.shape, bottom.shape);
 
@@ -79,6 +102,11 @@ export function generateOutfitFormulas(
       );
 
       const matchingAccessory = accessories.find(a => fitsOccasion(a));
+
+      // Validate pattern combination across all items in ensemble
+      if (!hasValidPatternCombination([top, bottom, matchingOuter, matchingShoes, matchingBag])) {
+        continue;
+      }
 
       // Calculate Finish Completeness Score (The 'F' in CSF)
       let finishScore = 50;
@@ -139,6 +167,10 @@ export function generateOutfitFormulas(
     const matchingShoes = shoes.find(s => fitsOccasion(s));
     const matchingBag = bags.find(b => fitsOccasion(b));
     const matchingAccessory = accessories.find(a => fitsOccasion(a));
+
+    if (!hasValidPatternCombination([dress, matchingOuter, matchingShoes, matchingBag])) {
+      continue;
+    }
 
     const colorEval = matchingOuter 
       ? evaluateColorPairing(dress.primaryColor, matchingOuter.primaryColor, dress.patternColors, matchingOuter.patternColors)
@@ -210,12 +242,21 @@ export function evaluateManualOutfit(items: {
   const primaryColor = (primaryItem?.primaryColor || 'Camel') as FormulaColor;
   const pairingColor = (secondaryItem?.primaryColor || 'Navy') as FormulaColor;
 
-  const colorEval = evaluateColorPairing(
+  let colorEval = evaluateColorPairing(
     primaryColor,
     pairingColor,
     primaryItem?.patternColors,
     secondaryItem?.patternColors
   );
+
+  // Validate outfit-wide pattern compatibility across all selected pieces
+  if (!hasValidPatternCombination([top, bottom, onePiece, outerwear, shoes, bag, accessory])) {
+    colorEval = {
+      isMatch: false,
+      score: 0,
+      reason: 'Pattern Clash: Outfits cannot mix multiple patterned pieces unless they feature the exact same pattern colorway.'
+    };
+  }
   const shapeEval = evaluateShapeHarmony(
     top?.shape || onePiece?.shape,
     bottom?.shape,
