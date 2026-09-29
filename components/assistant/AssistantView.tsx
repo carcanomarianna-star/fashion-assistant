@@ -150,17 +150,17 @@ export const AssistantView: React.FC<AssistantViewProps> = ({
                 >
                   All Colors
                 </button>
-                {(['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple', 'Pink', 'Brown', 'Camel', 'Navy'] as FormulaColor[]).map((col) => {
+                {(Object.keys(COLOR_CONFIG) as FormulaColor[]).map((col) => {
                   const info = COLOR_CONFIG[col];
                   const isSelected = selectedFocusColor === col;
                   return (
                     <button
                       key={col}
                       onClick={() => setSelectedFocusColor(isSelected ? 'All' : col)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap border transition ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap border transition ${
                         isSelected
-                          ? 'border-editorial-900 bg-editorial-50 font-semibold shadow-xs'
-                          : 'border-editorial-200 bg-white hover:bg-editorial-50'
+                          ? 'border-editorial-900 bg-editorial-900 text-white font-semibold shadow-xs'
+                          : 'border-editorial-200 bg-white hover:bg-editorial-50 text-editorial-800'
                       }`}
                     >
                       <span className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: info.hex }} />
