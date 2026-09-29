@@ -1,9 +1,7 @@
-"use client";
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WardrobeItem } from '@/lib/types';
 import { COLOR_CONFIG, EVERYDAY_COLOR_CHEAT_SHEET } from '@/lib/style-formula-rules';
-import { X, Heart, Trash2, PlusCircle, CheckCircle2, Sparkles, Shirt, Edit3 } from 'lucide-react';
+import { X, Heart, Trash2, PlusCircle, CheckCircle2, Sparkles, Shirt, Edit3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface ItemDetailModalProps {
@@ -25,27 +23,72 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   onBuildOutfitAround,
   onEditItem,
 }) => {
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+
+  useEffect(() => {
+    setActiveImgIdx(0);
+  }, [item?.id]);
+
   if (!item) return null;
 
   const colorInfo = COLOR_CONFIG[item.primaryColor] || { hex: '#E5E7EB', textDark: true };
   const cheatSheetRule = EVERYDAY_COLOR_CHEAT_SHEET[item.primaryColor];
 
+  const allImages = item.images && item.images.length > 0 
+    ? item.images 
+    : (item.imageUrl ? [item.imageUrl] : []);
+
+  const activeImage = allImages[activeImgIdx] || item.imageUrl || '';
+
+  const handlePrevImage = () => {
+    setActiveImgIdx((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setActiveImgIdx((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm animate-fade-in overflow-y-auto">
       <div className="bg-editorial-50 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-editorial-200 my-8">
-        {/* Top Header */}
+        {/* Top Header & Main Image Carousel */}
         <div className="relative aspect-square w-full bg-gradient-to-b from-white/90 to-editorial-100/60 p-6 flex items-center justify-center">
-          {item.imageUrl ? (
+          {activeImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={item.imageUrl}
+              src={activeImage}
               alt={item.name}
-              className="w-full h-full object-contain filter drop-shadow-md"
+              className="w-full h-full object-contain filter drop-shadow-md transition-all duration-300"
             />
           ) : (
             <div className="w-24 h-24 rounded-full bg-editorial-200 flex items-center justify-center text-editorial-500 font-serif text-3xl">
               {item.name.charAt(0)}
             </div>
+          )}
+
+          {/* Carousel Arrows */}
+          {allImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 backdrop-blur-md text-editorial-800 hover:bg-white shadow-md transition"
+                title="Previous photo"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 backdrop-blur-md text-editorial-800 hover:bg-white shadow-md transition"
+                title="Next photo"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-editorial-900/80 text-white text-[10px] font-bold backdrop-blur-md">
+                {activeImgIdx + 1} / {allImages.length}
+              </div>
+            </>
           )}
 
           <button
@@ -79,6 +122,27 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             />
           </button>
         </div>
+
+        {/* Thumbnail Gallery Strip */}
+        {allImages.length > 1 && (
+          <div className="px-5 pt-3 flex items-center justify-center gap-2 overflow-x-auto bg-white/60 py-2 border-b border-editorial-200/60">
+            {allImages.map((imgUrl, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveImgIdx(idx)}
+                className={`w-12 h-12 rounded-lg border-2 overflow-hidden bg-white shrink-0 transition ${
+                  idx === activeImgIdx
+                    ? 'border-editorial-900 ring-2 ring-editorial-900/30 scale-105'
+                    : 'border-editorial-200 opacity-60 hover:opacity-100'
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imgUrl} alt="" className="w-full h-full object-contain p-0.5" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content Body */}
         <div className="p-5 space-y-4 max-h-[55vh] overflow-y-auto bg-editorial-50">

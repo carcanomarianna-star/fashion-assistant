@@ -109,6 +109,7 @@ export interface WardrobeItem {
   occasions: Occasion[];
   seasons: Season[];
   imageUrl: string; // Base64 or Blob URL stored in IndexedDB
+  images?: string[]; // Multiple photos array (e.g. front, back, detail, tag)
   brand?: string;
   notes?: string;
   favorite?: boolean;

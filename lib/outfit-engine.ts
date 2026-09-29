@@ -84,22 +84,48 @@ export function generateOutfitFormulas(
       // Evaluate Shape Harmony
       const shapeEval = evaluateShapeHarmony(top.shape, bottom.shape);
 
-      // Pick matching outerwear (optional)
-      const matchingOuter = outerwears.find(o => 
-        fitsOccasion(o) && 
-        (anchorItem?.id === o.id || evaluateColorPairing(o.primaryColor, top.primaryColor, o.patternColors, top.patternColors).isMatch)
+      // Pick matching outerwear (optional or anchored)
+      const candidateOuterwears = (anchorItem && anchorItem.category === 'Outerwear')
+        ? [anchorItem]
+        : outerwears.filter(o => fitsOccasion(o));
+
+      const matchingOuter = candidateOuterwears.find(o => 
+        anchorItem?.id === o.id || evaluateColorPairing(o.primaryColor, top.primaryColor, o.patternColors, top.patternColors).isMatch
       );
 
-      // Pick matching shoes & bags
-      const matchingShoes = shoes.find(s => 
-        fitsOccasion(s) && 
-        (anchorItem?.id === s.id || evaluateColorPairing(s.primaryColor, bottom.primaryColor, s.patternColors, bottom.patternColors).score >= 70)
-      );
+      // Pick matching shoes dynamically based on highest color harmony with top/bottom or anchor
+      const candidateShoes = (anchorItem && anchorItem.category === 'Shoes')
+        ? [anchorItem]
+        : shoes.filter(s => fitsOccasion(s));
 
-      const matchingBag = bags.find(b => 
-        fitsOccasion(b) && 
-        (anchorItem?.id === b.id || evaluateColorPairing(b.primaryColor, top.primaryColor, b.patternColors, top.patternColors).score >= 70)
-      );
+      const scoredShoes = candidateShoes
+        .map(s => {
+          const evalBottom = evaluateColorPairing(s.primaryColor, bottom.primaryColor, s.patternColors, bottom.patternColors);
+          const evalTop = evaluateColorPairing(s.primaryColor, top.primaryColor, s.patternColors, top.patternColors);
+          const score = Math.max(evalBottom.score, evalTop.score);
+          return { shoe: s, score };
+        })
+        .filter(s => s.shoe.id === anchorItem?.id || s.score >= 60)
+        .sort((a, b) => b.score - a.score);
+
+      const matchingShoes = scoredShoes[0]?.shoe;
+
+      // Pick matching bag dynamically based on highest color harmony or anchor
+      const candidateBags = (anchorItem && anchorItem.category === 'Bags')
+        ? [anchorItem]
+        : bags.filter(b => fitsOccasion(b));
+
+      const scoredBags = candidateBags
+        .map(b => {
+          const evalTop = evaluateColorPairing(b.primaryColor, top.primaryColor, b.patternColors, top.patternColors);
+          const evalBottom = evaluateColorPairing(b.primaryColor, bottom.primaryColor, b.patternColors, bottom.patternColors);
+          const score = Math.max(evalTop.score, evalBottom.score);
+          return { bag: b, score };
+        })
+        .filter(b => b.bag.id === anchorItem?.id || b.score >= 60)
+        .sort((a, b) => b.score - a.score);
+
+      const matchingBag = scoredBags[0]?.bag;
 
       const matchingAccessory = accessories.find(a => fitsOccasion(a));
 
@@ -169,12 +195,36 @@ export function generateOutfitFormulas(
     if (!fitsOccasion(dress)) continue;
     if (focusColor && !matchesFocus(dress)) continue;
 
-    const matchingOuter = outerwears.find(o => 
-      fitsOccasion(o) && evaluateColorPairing(o.primaryColor, dress.primaryColor, o.patternColors, dress.patternColors).isMatch
+    const candidateOuterwears = (anchorItem && anchorItem.category === 'Outerwear')
+      ? [anchorItem]
+      : outerwears.filter(o => fitsOccasion(o));
+
+    const matchingOuter = candidateOuterwears.find(o => 
+      anchorItem?.id === o.id || evaluateColorPairing(o.primaryColor, dress.primaryColor, o.patternColors, dress.patternColors).isMatch
     );
 
-    const matchingShoes = shoes.find(s => fitsOccasion(s));
-    const matchingBag = bags.find(b => fitsOccasion(b));
+    const candidateShoes = (anchorItem && anchorItem.category === 'Shoes')
+      ? [anchorItem]
+      : shoes.filter(s => fitsOccasion(s));
+
+    const scoredShoes = candidateShoes
+      .map(s => ({ shoe: s, score: evaluateColorPairing(s.primaryColor, dress.primaryColor, s.patternColors, dress.patternColors).score }))
+      .filter(s => s.shoe.id === anchorItem?.id || s.score >= 60)
+      .sort((a, b) => b.score - a.score);
+
+    const matchingShoes = scoredShoes[0]?.shoe;
+
+    const candidateBags = (anchorItem && anchorItem.category === 'Bags')
+      ? [anchorItem]
+      : bags.filter(b => fitsOccasion(b));
+
+    const scoredBags = candidateBags
+      .map(b => ({ bag: b, score: evaluateColorPairing(b.primaryColor, dress.primaryColor, b.patternColors, dress.patternColors).score }))
+      .filter(b => b.bag.id === anchorItem?.id || b.score >= 60)
+      .sort((a, b) => b.score - a.score);
+
+    const matchingBag = scoredBags[0]?.bag;
+
     const matchingAccessory = accessories.find(a => fitsOccasion(a));
 
     if (!hasValidPatternCombination([dress, matchingOuter, matchingShoes, matchingBag])) {

@@ -89,6 +89,102 @@ export const EVERYDAY_COLOR_CHEAT_SHEET: Record<string, ColorPairingRule> = {
     description: 'Rich golden warmth. Navy and Denim ground its brightness; Cream and Charcoal create high-contrast sophistication.',
     mood: 'Warm & Artisanal'
   },
+  Camel: {
+    mainColor: 'Camel',
+    pairings: ['Red', 'Navy', 'Blue', 'Cream', 'Black', 'White', 'Burgundy'],
+    description: 'Classic luxury neutral. Softens bold reds, pairs effortlessly with navy and denim, elevates minimalist whites.',
+    mood: 'Tailored Luxury'
+  },
+  Navy: {
+    mainColor: 'Navy',
+    pairings: ['Red', 'Green', 'Camel', 'Mustard', 'Cream', 'White', 'Pink'],
+    description: 'Universal anchor neutral. Sleek alternative to black, pairs elegantly with bright accents and warm neutrals.',
+    mood: 'Classic Polish'
+  },
+  Cream: {
+    mainColor: 'Cream',
+    pairings: ['Brown', 'Green', 'Burgundy', 'Navy', 'Black', 'Camel', 'Olive'],
+    description: 'Soft luminous bridge. Softer than stark white; creates rich latte tones and brightens dark ensembles.',
+    mood: 'Luminous Elegance'
+  },
+  Emerald: {
+    mainColor: 'Emerald',
+    pairings: ['Red', 'Cream', 'Camel', 'Navy', 'Black', 'Tan'],
+    description: 'Deep jewel tone. Striking with red, grounded by camel and navy for rich autumn/winter sophistication.',
+    mood: 'Rich Jewel Polish'
+  },
+  Cobalt: {
+    mainColor: 'Cobalt',
+    pairings: ['Orange', 'White', 'Black', 'Denim', 'Camel', 'Tan'],
+    description: 'Vibrant high-contrast blue. Electrifying with orange; crisp and architectural against white and tan.',
+    mood: 'High-Impact Modern'
+  },
+  Denim: {
+    mainColor: 'Denim',
+    pairings: ['Orange', 'Green', 'Pink', 'Red', 'White', 'Brown', 'Mustard'],
+    description: 'Universal casual anchor. Acts as a canvas neutral for virtually all primary and accent shades.',
+    mood: 'Effortless Casual'
+  },
+  Tan: {
+    mainColor: 'Tan',
+    pairings: ['Orange', 'White', 'Blue', 'Navy', 'Black', 'Denim'],
+    description: 'Warm natural neutral. Excellent for leather finishing pieces and grounding warm accent palettes.',
+    mood: 'Natural Warmth'
+  },
+  Olive: {
+    mainColor: 'Olive',
+    pairings: ['Orange', 'Yellow', 'Brown', 'Cream', 'Black', 'Pink', 'Mustard'],
+    description: 'Earthy utility neutral. Brings an organic grounding contrast to bright accents and soft neutrals.',
+    mood: 'Utilitarian Chic'
+  },
+  Lilac: {
+    mainColor: 'Lilac',
+    pairings: ['Yellow', 'White', 'Gray', 'Black', 'Navy', 'Denim'],
+    description: 'Soft pastel statement. Fresh and brightened by white and gray; unexpected pop against black and navy.',
+    mood: 'Pastel Radiance'
+  },
+  Gray: {
+    mainColor: 'Gray',
+    pairings: ['Yellow', 'Blue', 'Pink', 'Purple', 'White', 'Black', 'Charcoal Gray'],
+    description: 'Cool versatile neutral. Balances high-energy accents like yellow and pink; builds subtle tonal layers.',
+    mood: 'Understated Cool'
+  },
+  Black: {
+    mainColor: 'Black',
+    pairings: ['White', 'Cream', 'Camel', 'Red', 'Green', 'Purple', 'Gray'],
+    description: 'Definitive anchor tone. Provides crisp contrast, architectural silhouette lines, and universal compatibility.',
+    mood: 'Minimalist & Sleek'
+  },
+  White: {
+    mainColor: 'White',
+    pairings: ['Black', 'Navy', 'Blue', 'Purple', 'Red', 'Denim', 'Camel'],
+    description: 'Pure luminous foundation. Illuminates all accent colors and creates timeless monochrome contrast.',
+    mood: 'Crisp & Luminous'
+  },
+  Burgundy: {
+    mainColor: 'Burgundy',
+    pairings: ['Pink', 'Navy', 'Cream', 'Mustard', 'Gray', 'Camel', 'Black'],
+    description: 'Deep wine accent. Pairs with pink for rich tonal depth; grounded by navy and cream for opulent polish.',
+    mood: 'Opulent Warmth'
+  },
+  'Charcoal Gray': {
+    mainColor: 'Charcoal Gray',
+    pairings: ['Mustard', 'Pink', 'Yellow', 'White', 'Cream', 'Burgundy', 'Cerulean'],
+    description: 'Deep moody neutral. Softer than pure black; creates striking architectural contrast with warm golds and pinks.',
+    mood: 'Architectural Depth'
+  },
+  Cerulean: {
+    mainColor: 'Cerulean',
+    pairings: ['Orange', 'Camel', 'Cream', 'Navy', 'White', 'Brown'],
+    description: 'Bright sky blue. Vibrant complementary pop against orange and camel; serene with white and cream.',
+    mood: 'Serene & Artistic'
+  },
+  Pattern: {
+    mainColor: 'Pattern',
+    pairings: ['White', 'Black', 'Navy', 'Cream', 'Denim', 'Camel'],
+    description: 'Statement multi-color print. Anchored by solid tones matching the sub-colors present in the print.',
+    mood: 'Dynamic Print'
+  },
 };
 
 /**

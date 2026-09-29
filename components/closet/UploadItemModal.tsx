@@ -92,7 +92,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagesList, setImagesList] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<MainCategory>('Tops');
   const [subcategory, setSubcategory] = useState<SubCategory>('T-Shirt');
@@ -108,7 +108,10 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
 
   useEffect(() => {
     if (initialItem) {
-      setImagePreview(initialItem.imageUrl || '');
+      const existingImgs = initialItem.images && initialItem.images.length > 0 
+        ? initialItem.images 
+        : (initialItem.imageUrl ? [initialItem.imageUrl] : []);
+      setImagesList(existingImgs);
       setName(initialItem.name || '');
       setCategory(initialItem.category || 'Tops');
       setSubcategory(initialItem.subcategory || 'T-Shirt');
@@ -120,7 +123,7 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
       setBrand(initialItem.brand || '');
       setNotes(initialItem.notes || '');
     } else {
-      setImagePreview('');
+      setImagesList([]);
       setName('');
       setCategory('Tops');
       setSubcategory('T-Shirt');
@@ -137,16 +140,31 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
   if (!isOpen) return null;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setImagePreview(event.target.result as string);
+          setImagesList((prev) => [...prev, event.target!.result as string]);
         }
       };
       reader.readAsDataURL(file);
-    }
+    });
+    // Reset file input value so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImagesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleSetMainImage = (indexToMain: number) => {
+    if (indexToMain === 0) return;
+    setImagesList((prev) => {
+      const newArr = [...prev];
+      const [selected] = newArr.splice(indexToMain, 1);
+      return [selected, ...newArr];
+    });
   };
 
   const handleCategoryChange = (newCat: MainCategory) => {
@@ -179,6 +197,8 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
+    const mainImageUrl = imagesList[0] || initialItem?.imageUrl || '';
+
     if (isEditing && initialItem && onUpdate) {
       onUpdate({
         ...initialItem,
@@ -190,7 +210,8 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
         shape,
         finishTexture,
         occasions: selectedOccasions,
-        imageUrl: imagePreview || initialItem.imageUrl || '',
+        imageUrl: mainImageUrl,
+        images: imagesList.length > 0 ? imagesList : [mainImageUrl],
         brand: brand.trim() || undefined,
         notes: notes.trim() || undefined,
       });
@@ -205,7 +226,8 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
         finishTexture,
         occasions: selectedOccasions,
         seasons: ['All Season'],
-        imageUrl: imagePreview || '',
+        imageUrl: mainImageUrl,
+        images: imagesList,
         brand: brand.trim() || undefined,
         notes: notes.trim() || undefined,
         favorite: false,
@@ -239,68 +261,92 @@ export const UploadItemModal: React.FC<UploadItemModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
-          {/* Image Upload / Capture Section */}
+          {/* Image Upload / Multi-Photo Section */}
           <div>
-            <label className="block text-xs font-bold text-editorial-700 uppercase tracking-wider mb-2">
-              {isEditing ? 'Change Garment Photo' : 'Garment Photo'}
-            </label>
-            <div className="flex items-center gap-3">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="relative w-28 h-28 rounded-2xl border-2 border-dashed border-editorial-300 hover:border-editorial-500 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white group transition"
-              >
-                {imagePreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-contain p-1"
-                  />
-                ) : (
-                  <div className="text-center p-2">
-                    <ImageIcon className="w-6 h-6 mx-auto text-editorial-400 group-hover:scale-110 transition" />
-                    <span className="text-[10px] font-medium text-editorial-500 mt-1 block">
-                      Choose Photo
-                    </span>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-editorial-700 uppercase tracking-wider">
+                Garment Photos ({imagesList.length})
+              </label>
+              <span className="text-[10px] text-editorial-500 font-medium">
+                Tap photo to set as main
+              </span>
+            </div>
+
+            {/* Thumbnail Strip */}
+            {imagesList.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3">
+                {imagesList.map((imgUrl, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSetMainImage(idx)}
+                    className={`relative w-20 h-20 rounded-xl border-2 shrink-0 overflow-hidden bg-white cursor-pointer group transition ${
+                      idx === 0
+                        ? 'border-editorial-900 ring-2 ring-editorial-900/30'
+                        : 'border-editorial-200 hover:border-editorial-400'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imgUrl}
+                      alt={`Photo ${idx + 1}`}
+                      className="w-full h-full object-contain p-1"
+                    />
+                    {idx === 0 && (
+                      <span className="absolute bottom-0 inset-x-0 bg-editorial-900 text-white text-[8px] font-bold text-center py-0.5 uppercase tracking-tighter">
+                        Main
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage(idx);
+                      }}
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white hover:bg-red-600 transition"
+                      title="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
+            )}
 
-              <div className="flex flex-col gap-2 flex-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-                <input
-                  type="file"
-                  ref={cameraInputRef}
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <input
+                type="file"
+                ref={cameraInputRef}
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageChange}
+                className="hidden"
+              />
 
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-editorial-900 text-editorial-50 text-xs font-semibold hover:bg-editorial-800 transition active:scale-95"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Take Photo with Camera</span>
-                </button>
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-editorial-900 text-editorial-50 text-xs font-semibold hover:bg-editorial-800 transition active:scale-95 shadow-sm"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Take Photo</span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-editorial-300 text-editorial-800 text-xs font-semibold hover:bg-editorial-100 transition active:scale-95"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{isEditing ? 'Change Photo' : 'Upload from Gallery'}</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-editorial-300 text-editorial-800 text-xs font-semibold hover:bg-editorial-100 transition active:scale-95 shadow-sm"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{imagesList.length > 0 ? '+ Add More Photos' : 'Upload Photos'}</span>
+              </button>
             </div>
           </div>
 

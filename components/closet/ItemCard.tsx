@@ -31,16 +31,23 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     >
       {/* Garment Image Area */}
       <div className="relative aspect-square w-full bg-gradient-to-b from-editorial-50/60 to-editorial-100/40 p-3 flex items-center justify-center overflow-hidden">
-        {item.imageUrl ? (
+        {(item.images?.[0] || item.imageUrl) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={item.imageUrl}
+            src={item.images?.[0] || item.imageUrl}
             alt={item.name}
             className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-editorial-200 flex items-center justify-center text-editorial-500 font-serif text-xl">
             {item.name.charAt(0)}
+          </div>
+        )}
+
+        {/* Photo Count Badge */}
+        {item.images && item.images.length > 1 && (
+          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-editorial-900/80 text-white text-[9px] font-bold backdrop-blur-md shadow-xs">
+            📷 {item.images.length}
           </div>
         )}
 
