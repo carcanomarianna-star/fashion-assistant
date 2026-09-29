@@ -92,18 +92,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
   };
 
   const handleShuffle = () => {
-    const randomTop = items.filter(i => i.category === 'Tops')[Math.floor(Math.random() * items.filter(i => i.category === 'Tops').length)];
-    const randomBottom = items.filter(i => i.category === 'Bottoms')[Math.floor(Math.random() * items.filter(i => i.category === 'Bottoms').length)];
-    const randomOuter = items.filter(i => i.category === 'Outerwear')[0];
-    const randomShoes = items.filter(i => i.category === 'Shoes')[0];
-    const randomBag = items.filter(i => i.category === 'Bags')[0];
+    const availableTops = items.filter(i => i.category === 'Tops');
+    const availableBottoms = items.filter(i => i.category === 'Bottoms');
+    const availableOuterwears = items.filter(
+      i => i.category === 'Outerwear' || i.subcategory === 'Blazer' || i.subcategory === 'Structured Blazer'
+    );
+    const availableShoes = items.filter(i => i.category === 'Shoes');
+    const availableBags = items.filter(i => i.category === 'Bags');
+    const availableAccessories = items.filter(i => i.category === 'Accessories');
 
-    if (randomTop) setTop(randomTop);
-    if (randomBottom) setBottom(randomBottom);
+    const randomTop = availableTops.length > 0
+      ? availableTops[Math.floor(Math.random() * availableTops.length)]
+      : undefined;
+    const randomBottom = availableBottoms.length > 0
+      ? availableBottoms[Math.floor(Math.random() * availableBottoms.length)]
+      : undefined;
+    const randomOuter = availableOuterwears.length > 0
+      ? availableOuterwears[Math.floor(Math.random() * availableOuterwears.length)]
+      : undefined;
+    const randomShoes = availableShoes.length > 0
+      ? availableShoes[Math.floor(Math.random() * availableShoes.length)]
+      : undefined;
+    const randomBag = availableBags.length > 0
+      ? availableBags[Math.floor(Math.random() * availableBags.length)]
+      : undefined;
+    const randomAccessory = availableAccessories.length > 0
+      ? availableAccessories[Math.floor(Math.random() * availableAccessories.length)]
+      : undefined;
+
+    setTop(randomTop);
+    setBottom(randomBottom);
     setOnePiece(undefined);
-    if (randomOuter) setOuterwear(randomOuter);
-    if (randomShoes) setShoes(randomShoes);
-    if (randomBag) setBag(randomBag);
+    setOuterwear(randomOuter);
+    setShoes(randomShoes);
+    setBag(randomBag);
+    setAccessory(randomAccessory);
   };
 
   const handleReset = () => {
