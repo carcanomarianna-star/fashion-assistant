@@ -300,8 +300,73 @@ export function generateOutfitFormulas(
     }
   }
 
-  // Sort by overall highest score and return top results
-  return formulas.sort((a, b) => b.overallScore - a.overallScore).slice(0, limit);
+  // 3. Deduplicate and group formulas by base outfit core (top.id + bottom.id or onePiece.id)
+  // to prevent repetitive outputs showing identical top+bottom pairs with minor outerwear swaps.
+  const baseOutfitMap = new Map<string, OutfitFormula[]>();
+
+  for (const formula of formulas) {
+    const baseKey = formula.onePiece 
+      ? `dress-${formula.onePiece.id}`
+      : `twopiece-${formula.top?.id}-${formula.bottom?.id}`;
+
+    if (!baseOutfitMap.has(baseKey)) {
+      baseOutfitMap.set(baseKey, []);
+    }
+    baseOutfitMap.get(baseKey)!.push(formula);
+  }
+
+  // Pick top 1 best scoring formula per base combo (or top 2 if outerwear is specifically anchored)
+  const maxPerBaseKey = (anchorItem && isOuterwearAnchor(anchorItem)) ? 2 : 1;
+
+  const candidateFormulas: OutfitFormula[] = [];
+  for (const [, groupFormulas] of baseOutfitMap.entries()) {
+    groupFormulas.sort((a, b) => b.overallScore - a.overallScore);
+    candidateFormulas.push(...groupFormulas.slice(0, maxPerBaseKey));
+  }
+
+  // Sort candidates by overall score descending
+  candidateFormulas.sort((a, b) => b.overallScore - a.overallScore);
+
+  // 4. Item Diversity Rotation: Prioritize formulas that rotate key clothing items (tops, bottoms, dresses)
+  // so the Top 3 choices present distinct, non-repetitive wardrobe pieces.
+  const finalFormulas: OutfitFormula[] = [];
+  const usedTopIds = new Set<string>();
+  const usedBottomIds = new Set<string>();
+  const usedOnePieceIds = new Set<string>();
+
+  // Pass 1: Pick formulas that introduce new core pieces
+  for (const formula of candidateFormulas) {
+    const topId = formula.top?.id;
+    const bottomId = formula.bottom?.id;
+    const dressId = formula.onePiece?.id;
+
+    if (dressId) {
+      if (!usedOnePieceIds.has(dressId)) {
+        finalFormulas.push(formula);
+        usedOnePieceIds.add(dressId);
+      }
+    } else if (topId && bottomId) {
+      if (!usedTopIds.has(topId) || !usedBottomIds.has(bottomId)) {
+        finalFormulas.push(formula);
+        usedTopIds.add(topId);
+        usedBottomIds.add(bottomId);
+      }
+    }
+
+    if (finalFormulas.length >= limit) break;
+  }
+
+  // Pass 2: Fill remaining limit slots with remaining high-scoring candidate formulas
+  if (finalFormulas.length < limit) {
+    for (const formula of candidateFormulas) {
+      if (!finalFormulas.some(f => f.id === formula.id)) {
+        finalFormulas.push(formula);
+      }
+      if (finalFormulas.length >= limit) break;
+    }
+  }
+
+  return finalFormulas;
 }
 
 /**

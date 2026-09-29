@@ -176,22 +176,59 @@ export const AssistantView: React.FC<AssistantViewProps> = ({
           {generatedFormulas.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs text-editorial-600 font-medium px-1">
-                <span>Ranked by C + S + F Harmony</span>
-                <span>{generatedFormulas.length} Formulas Available</span>
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Top 3 Curated Combos (Item Rotated)</span>
+                </span>
+                <span>{generatedFormulas.length} Unique Formulas</span>
               </div>
 
-              {generatedFormulas.map((outfit) => {
-                const isSaved = savedOutfits.some((s) => s.id === outfit.id);
-                return (
-                  <OutfitCard
-                    key={outfit.id}
-                    outfit={outfit}
-                    onSaveOutfit={onSaveOutfit}
-                    isSaved={isSaved}
-                    onSelect={(selected) => onOpenCanvasWithOutfit(selected)}
-                  />
-                );
-              })}
+              {/* Section 1: Top 3 Combos */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-xs font-serif font-bold text-editorial-900 uppercase tracking-wider">
+                    Top 3 Core Outfit Choices
+                  </span>
+                  <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                    Rotated Base Items
+                  </span>
+                </div>
+                {generatedFormulas.slice(0, 3).map((outfit, index) => {
+                  const isSaved = savedOutfits.some((s) => s.id === outfit.id);
+                  return (
+                    <OutfitCard
+                      key={outfit.id}
+                      outfit={outfit}
+                      onSaveOutfit={onSaveOutfit}
+                      isSaved={isSaved}
+                      rank={index + 1}
+                      onSelect={(selected) => onOpenCanvasWithOutfit(selected)}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Section 2: Remaining Unique Outfits */}
+              {generatedFormulas.length > 3 && (
+                <div className="space-y-3 pt-4 border-t border-editorial-200">
+                  <span className="text-xs font-serif font-bold text-editorial-800 uppercase tracking-wider px-1 block">
+                    More Unique Combinations ({generatedFormulas.length - 3})
+                  </span>
+                  {generatedFormulas.slice(3).map((outfit, index) => {
+                    const isSaved = savedOutfits.some((s) => s.id === outfit.id);
+                    return (
+                      <OutfitCard
+                        key={outfit.id}
+                        outfit={outfit}
+                        onSaveOutfit={onSaveOutfit}
+                        isSaved={isSaved}
+                        rank={index + 4}
+                        onSelect={(selected) => onOpenCanvasWithOutfit(selected)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-16 px-4 bg-white/70 rounded-3xl border border-dashed border-editorial-300">

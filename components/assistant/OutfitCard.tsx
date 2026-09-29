@@ -10,6 +10,7 @@ interface OutfitCardProps {
   onSaveOutfit?: (outfit: OutfitFormula) => void;
   isSaved?: boolean;
   onSelect?: (outfit: OutfitFormula) => void;
+  rank?: number;
 }
 
 export const OutfitCard: React.FC<OutfitCardProps> = ({
@@ -17,6 +18,7 @@ export const OutfitCard: React.FC<OutfitCardProps> = ({
   onSaveOutfit,
   isSaved = false,
   onSelect,
+  rank,
 }) => {
   const items = [
     outfit.outerwear,
@@ -34,11 +36,33 @@ export const OutfitCard: React.FC<OutfitCardProps> = ({
   return (
     <div
       onClick={() => onSelect?.(outfit)}
-      className="glass-card rounded-3xl p-4 border border-editorial-200 shadow-sm hover:shadow-md transition-all duration-300 space-y-3.5 cursor-pointer"
+      className={`glass-card rounded-3xl p-4 border transition-all duration-300 space-y-3.5 cursor-pointer ${
+        rank === 1
+          ? 'border-amber-400/80 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 shadow-md ring-1 ring-amber-400/30'
+          : rank === 2
+          ? 'border-slate-300/80 bg-gradient-to-br from-slate-50/50 via-white to-slate-50/30 shadow-sm'
+          : rank === 3
+          ? 'border-amber-800/20 bg-gradient-to-br from-amber-900/5 via-white to-amber-900/5 shadow-xs'
+          : 'border-editorial-200 shadow-sm hover:shadow-md'
+      }`}
     >
       {/* Top Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {rank && rank <= 3 && (
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shadow-2xs flex items-center gap-1 ${
+                rank === 1
+                  ? 'bg-amber-500 text-white border-amber-600'
+                  : rank === 2
+                  ? 'bg-slate-700 text-white border-slate-800'
+                  : 'bg-amber-900 text-white border-amber-950'
+              }`}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>{rank === 1 ? 'Top Choice #1' : rank === 2 ? 'Top Choice #2' : 'Top Choice #3'}</span>
+            </span>
+          )}
           <span className="px-2.5 py-0.5 rounded-full bg-editorial-900 text-editorial-50 text-[10px] font-bold uppercase tracking-wider">
             {outfit.occasion}
           </span>
