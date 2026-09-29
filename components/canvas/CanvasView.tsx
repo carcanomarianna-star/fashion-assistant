@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { WardrobeItem, OutfitFormula, MainCategory } from '@/lib/types';
+import { WardrobeItem, OutfitFormula, MainCategory, Occasion } from '@/lib/types';
 import { evaluateManualOutfit } from '@/lib/outfit-engine';
 import { COLOR_CONFIG } from '@/lib/style-formula-rules';
-import { Plus, Sparkles, Bookmark, RotateCcw, Shuffle, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Plus, Sparkles, Bookmark, RotateCcw, Shuffle, CheckCircle2, ChevronRight, X, Lock, Unlock } from 'lucide-react';
 
 interface CanvasViewProps {
   items: WardrobeItem[];
@@ -12,6 +12,8 @@ interface CanvasViewProps {
   onSaveOutfit: (outfit: OutfitFormula) => void;
   onSetCurrentOutfit: (outfit: OutfitFormula) => void;
 }
+
+const OCCASIONS: Occasion[] = ['Work', 'Weekends', 'Dinner', 'Travel', 'Events'];
 
 export const CanvasView: React.FC<CanvasViewProps> = ({
   items,
@@ -21,6 +23,12 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
 }) => {
   // Active selection modal
   const [activeSlotCategory, setActiveSlotCategory] = useState<MainCategory | null>(null);
+
+  // Selected occasion filter
+  const [selectedOccasion, setSelectedOccasion] = useState<Occasion | 'All'>(currentOutfit?.occasion || 'All');
+
+  // Slot lock state (prevents slot from changing on shuffle)
+  const [lockedSlots, setLockedSlots] = useState<Record<string, boolean>>({});
 
   // Selected components
   const [top, setTop] = useState<WardrobeItem | undefined>(currentOutfit?.top);
@@ -41,8 +49,16 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       setShoes(currentOutfit.shoes);
       setBag(currentOutfit.bag);
       setAccessory(currentOutfit.accessory);
+      if (currentOutfit.occasion) {
+        setSelectedOccasion(currentOutfit.occasion);
+      }
     }
   }, [currentOutfit]);
+
+  const toggleLock = (slotKey: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLockedSlots(prev => ({ ...prev, [slotKey]: !prev[slotKey] }));
+  };
 
   // Live evaluation of composed outfit
   const evaluation = React.useMemo(() => {
@@ -92,41 +108,63 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
   };
 
   const handleShuffle = () => {
-    const availableTops = items.filter(i => i.category === 'Tops');
-    const availableBottoms = items.filter(i => i.category === 'Bottoms');
-    const availableOuterwears = items.filter(
+    const filterByOccasion = (categoryItems: WardrobeItem[]) => {
+      if (selectedOccasion === 'All') return categoryItems;
+      const matched = categoryItems.filter(i => i.occasions.includes(selectedOccasion));
+      return matched.length > 0 ? matched : categoryItems;
+    };
+
+    const availableTops = filterByOccasion(items.filter(i => i.category === 'Tops'));
+    const availableBottoms = filterByOccasion(items.filter(i => i.category === 'Bottoms'));
+    const availableOuterwears = filterByOccasion(items.filter(
       i => i.category === 'Outerwear' || i.subcategory === 'Blazer' || i.subcategory === 'Structured Blazer'
-    );
-    const availableShoes = items.filter(i => i.category === 'Shoes');
-    const availableBags = items.filter(i => i.category === 'Bags');
-    const availableAccessories = items.filter(i => i.category === 'Accessories');
+    ));
+    const availableShoes = filterByOccasion(items.filter(i => i.category === 'Shoes'));
+    const availableBags = filterByOccasion(items.filter(i => i.category === 'Bags'));
+    const availableAccessories = filterByOccasion(items.filter(i => i.category === 'Accessories'));
 
-    const randomTop = availableTops.length > 0
-      ? availableTops[Math.floor(Math.random() * availableTops.length)]
-      : undefined;
-    const randomBottom = availableBottoms.length > 0
-      ? availableBottoms[Math.floor(Math.random() * availableBottoms.length)]
-      : undefined;
-    const randomOuter = availableOuterwears.length > 0
-      ? availableOuterwears[Math.floor(Math.random() * availableOuterwears.length)]
-      : undefined;
-    const randomShoes = availableShoes.length > 0
-      ? availableShoes[Math.floor(Math.random() * availableShoes.length)]
-      : undefined;
-    const randomBag = availableBags.length > 0
-      ? availableBags[Math.floor(Math.random() * availableBags.length)]
-      : undefined;
-    const randomAccessory = availableAccessories.length > 0
-      ? availableAccessories[Math.floor(Math.random() * availableAccessories.length)]
-      : undefined;
+    if (!lockedSlots['top']) {
+      const randomTop = availableTops.length > 0
+        ? availableTops[Math.floor(Math.random() * availableTops.length)]
+        : undefined;
+      setTop(randomTop);
+      setOnePiece(undefined);
+    }
 
-    setTop(randomTop);
-    setBottom(randomBottom);
-    setOnePiece(undefined);
-    setOuterwear(randomOuter);
-    setShoes(randomShoes);
-    setBag(randomBag);
-    setAccessory(randomAccessory);
+    if (!lockedSlots['bottom']) {
+      const randomBottom = availableBottoms.length > 0
+        ? availableBottoms[Math.floor(Math.random() * availableBottoms.length)]
+        : undefined;
+      setBottom(randomBottom);
+    }
+
+    if (!lockedSlots['outerwear']) {
+      const randomOuter = availableOuterwears.length > 0
+        ? availableOuterwears[Math.floor(Math.random() * availableOuterwears.length)]
+        : undefined;
+      setOuterwear(randomOuter);
+    }
+
+    if (!lockedSlots['shoes']) {
+      const randomShoes = availableShoes.length > 0
+        ? availableShoes[Math.floor(Math.random() * availableShoes.length)]
+        : undefined;
+      setShoes(randomShoes);
+    }
+
+    if (!lockedSlots['bag']) {
+      const randomBag = availableBags.length > 0
+        ? availableBags[Math.floor(Math.random() * availableBags.length)]
+        : undefined;
+      setBag(randomBag);
+    }
+
+    if (!lockedSlots['accessory']) {
+      const randomAccessory = availableAccessories.length > 0
+        ? availableAccessories[Math.floor(Math.random() * availableAccessories.length)]
+        : undefined;
+      setAccessory(randomAccessory);
+    }
   };
 
   const handleReset = () => {
@@ -137,6 +175,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
     setShoes(undefined);
     setBag(undefined);
     setAccessory(undefined);
+    setLockedSlots({});
   };
 
   const primaryCol = COLOR_CONFIG[evaluation.colorStory.primaryColor];
@@ -145,7 +184,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
   return (
     <div className="space-y-4 px-4 py-3 pb-24">
       {/* Studio Header & Quick Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <span className="text-[10px] font-bold tracking-widest uppercase text-editorial-500">
             Interactive Moodboard
@@ -158,10 +197,11 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={handleShuffle}
-            className="p-2 rounded-xl bg-editorial-100 hover:bg-editorial-200 text-editorial-800 transition active:scale-95"
-            title="Random Match"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-editorial-900 text-editorial-50 hover:bg-editorial-800 transition active:scale-95 text-xs font-bold shadow-xs"
+            title="Random Match (respects locks and occasion)"
           >
-            <Shuffle className="w-4 h-4" />
+            <Shuffle className="w-3.5 h-3.5" />
+            <span>Shuffle</span>
           </button>
           <button
             onClick={handleReset}
@@ -180,6 +220,36 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
         </div>
       </div>
 
+      {/* Occasion Filter Toolbar */}
+      <div className="p-3 rounded-2xl bg-white border border-editorial-200 shadow-xs flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-editorial-500 shrink-0">
+          Occasion Filter:
+        </span>
+        <button
+          onClick={() => setSelectedOccasion('All')}
+          className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+            selectedOccasion === 'All'
+              ? 'bg-editorial-900 text-white shadow-xs'
+              : 'bg-editorial-100 text-editorial-700 hover:bg-editorial-200'
+          }`}
+        >
+          All Occasions
+        </button>
+        {OCCASIONS.map((occ) => (
+          <button
+            key={occ}
+            onClick={() => setSelectedOccasion(occ)}
+            className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+              selectedOccasion === occ
+                ? 'bg-editorial-900 text-white shadow-xs'
+                : 'bg-editorial-100 text-editorial-700 hover:bg-editorial-200'
+            }`}
+          >
+            {occ}
+          </button>
+        ))}
+      </div>
+
       {/* Main Flat-Lay Visual Grid */}
       <div className="p-4 rounded-3xl bg-editorial-100/60 border border-editorial-200/80 space-y-3">
         {/* Upper Body Row (Outerwear + Top / OnePiece) */}
@@ -187,19 +257,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Top / Dress Slot */}
           <div
             onClick={() => setActiveSlotCategory('Tops')}
-            className="relative aspect-square rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['top']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Top / Base
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500 flex items-center gap-1">
+              Top / Base {lockedSlots['top'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {top || onePiece ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('top', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['top']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['top'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['top'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {(top || onePiece) && (
                 <button
                   onClick={(e) => handleClearSlot(top ? 'Tops' : 'One-Piece', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {top || onePiece ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={(top || onePiece)?.imageUrl}
@@ -223,19 +315,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Outerwear / Third Piece Slot */}
           <div
             onClick={() => setActiveSlotCategory('Outerwear')}
-            className="relative aspect-square rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['outerwear']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Third Piece (Outer)
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500">
+              Third Piece {lockedSlots['outerwear'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {outerwear ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('outerwear', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['outerwear']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['outerwear'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['outerwear'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {outerwear && (
                 <button
                   onClick={(e) => handleClearSlot('Outerwear', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {outerwear ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={outerwear.imageUrl}
@@ -262,19 +376,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Bottom Slot */}
           <div
             onClick={() => setActiveSlotCategory('Bottoms')}
-            className="relative aspect-square rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['bottom']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Bottom
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500">
+              Bottom {lockedSlots['bottom'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {bottom ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('bottom', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['bottom']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['bottom'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['bottom'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {bottom && (
                 <button
                   onClick={(e) => handleClearSlot('Bottoms', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {bottom ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={bottom.imageUrl}
@@ -298,19 +434,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Shoes Slot */}
           <div
             onClick={() => setActiveSlotCategory('Shoes')}
-            className="relative aspect-square rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center p-3 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['shoes']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Footwear (F)
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500">
+              Footwear {lockedSlots['shoes'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {shoes ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('shoes', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['shoes']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['shoes'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['shoes'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {shoes && (
                 <button
                   onClick={(e) => handleClearSlot('Shoes', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {shoes ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={shoes.imageUrl}
@@ -337,19 +495,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Bag Slot */}
           <div
             onClick={() => setActiveSlotCategory('Bags')}
-            className="relative h-28 rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-2 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative h-28 rounded-2xl flex flex-col items-center justify-center p-2 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['bag']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Bag (F)
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500">
+              Bag {lockedSlots['bag'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {bag ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('bag', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['bag']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['bag'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['bag'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {bag && (
                 <button
                   onClick={(e) => handleClearSlot('Bags', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {bag ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={bag.imageUrl}
@@ -373,19 +553,41 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
           {/* Accessory Slot */}
           <div
             onClick={() => setActiveSlotCategory('Accessories')}
-            className="relative h-28 rounded-2xl bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400 flex flex-col items-center justify-center p-2 cursor-pointer group transition shadow-xs overflow-hidden"
+            className={`relative h-28 rounded-2xl flex flex-col items-center justify-center p-2 cursor-pointer group transition shadow-xs overflow-hidden ${
+              lockedSlots['accessory']
+                ? 'bg-amber-50/40 border-2 border-amber-500/80 ring-1 ring-amber-400/40'
+                : 'bg-white border-2 border-dashed border-editorial-200 hover:border-editorial-400'
+            }`}
           >
-            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-400">
-              Accessory
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-editorial-500">
+              Accessory {lockedSlots['accessory'] && <span className="text-amber-700 font-extrabold">(Locked)</span>}
             </span>
-            {accessory ? (
-              <>
+
+            {/* Lock / Controls */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <button
+                onClick={(e) => toggleLock('accessory', e)}
+                className={`p-1 rounded-full transition ${
+                  lockedSlots['accessory']
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-editorial-100/80 text-editorial-500 hover:text-editorial-900'
+                }`}
+                title={lockedSlots['accessory'] ? 'Unlock Slot' : 'Lock Item for Shuffle'}
+              >
+                {lockedSlots['accessory'] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              </button>
+              {accessory && (
                 <button
                   onClick={(e) => handleClearSlot('Accessories', e)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-editorial-100 text-editorial-500 hover:text-editorial-900 transition"
+                  className="p-1 rounded-full bg-editorial-100/80 text-editorial-500 hover:text-editorial-900 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
+              )}
+            </div>
+
+            {accessory ? (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={accessory.imageUrl}
